@@ -75,13 +75,13 @@ import (
 
 
 type ComplexRecord struct {
-	Name   string           `bigquery:"column:Name"`
-	Record ComplexSubRecord `bigquery:"column:Record:type:RECORD"`
+	Name   string           `gorm:"column:Name"`
+	Record ComplexSubRecord `gorm:"column:Record:type:RECORD"`
 }
 
 type ComplexSubRecord struct {
-	Name string `bigquery:"column:Name"`
-	Age  int    `bigquery:"column:Age"`
+	Name string `gorm:"column:Name"`
+	Age  int    `gorm:"column:Age"`
 }
 
 
@@ -121,13 +121,13 @@ import (
 )
 
 type ArrayRecord struct {
-	Name    string            `bigquery:"column:Name"`
-	Records []ComplexSubRecord `bigquery:"column:Records;type:ARRAY"`
+	Name    string            `gorm:"column:Name"`
+	Records []ComplexSubRecord `gorm:"column:Records;type:ARRAY"`
 }
 
 type ComplexSubRecord struct {
-	Name string `bigquery:"column:Name"`
-	Age  int    `bigquery:"column:Age"`
+	Name string `gorm:"column:Name"`
+	Age  int    `gorm:"column:Age"`
 }
 
 func main() {
@@ -167,7 +167,7 @@ import (
 )
 
 type Version struct {
-	Label string `bigquery:"column:Label"`
+	Label string `gorm:"column:Label"`
 }
 
 func main() {

@@ -63,3 +63,42 @@ func (suite *MetadataTestSuit) Test_CRUDTableWithArray() {
 		assert.Equal(suite.T(), 444, records[1].Records[0].Age)
 	}
 }
+
+func (suite *MetadataTestSuit) Test_CRUDTableWithMultipleNesting() {
+	var records []SuperComplexRecord
+	suite.db.Migrator().DropTable(&SuperComplexRecord{})
+	assert.False(suite.T(), suite.db.Migrator().HasTable(&SuperComplexRecord{}))
+	suite.db.AutoMigrate(&SuperComplexRecord{})
+	assert.True(suite.T(), suite.db.Migrator().HasTable(&SuperComplexRecord{}))
+	suite.db.Create(&SuperComplexRecord{Name: "test",
+		SuperRecord: SuperComplexSubRecord{
+			Name: "rec1",
+			Record: ComplexSubRecord{
+				Name: "name1",
+				Age:  444,
+			},
+		},
+		SuperRecords: []SuperComplexSubRecord{
+			{Name: "sub1", Record: ComplexSubRecord{
+				Name: "dep1",
+				Age:  444,
+			}},
+			{Name: "sub2", Record: ComplexSubRecord{Name: "dep2"}}}})
+	suite.db.Create(&SuperComplexRecord{Name: "test2",
+		SuperRecord: SuperComplexSubRecord{
+			Name: "rec2",
+			Record: ComplexSubRecord{
+				Name: "dep3",
+			},
+		},
+		SuperRecords: []SuperComplexSubRecord{
+			{Name: "sub3", Record: ComplexSubRecord{
+				Name: "dep3",
+				Age:  0,
+			}}, {Name: "sub4", Record: ComplexSubRecord{Name: "dep4"}}}})
+	suite.db.Order("Name").Find(&records)
+	assert.Equal(suite.T(), 2, len(records), "we should have two records")
+	if len(records) == 2 {
+		assert.Equal(suite.T(), 444, records[0].SuperRecords[0].Record.Age)
+	}
+}
