@@ -29,6 +29,11 @@ func (columns bigQueryColumns) ColumnNames() []string {
 	return columns.names
 }
 
+type bigQueryReroutedColumn struct {
+	values []bigquery.Value
+	schema bigquery.Schema
+}
+
 type bigQueryColumn struct {
 	Name    string
 	Schema  bigquery.Schema
@@ -50,11 +55,7 @@ func (column bigQueryColumn) ConvertValue(value bigquery.Value) driver.Value {
 			}
 		}
 
-		schema := createBigQuerySchema(column.Schema, column.GetSchemaAdaptor())
-
-		value = &bigQueryRows{
-			source: createSourceFromColumn(schema, values),
-		}
+		value = bigQueryReroutedColumn{values: values, schema: column.Schema}
 	}
 
 	if columnAdaptor := column.Adaptor; columnAdaptor != nil {
@@ -62,13 +63,6 @@ func (column bigQueryColumn) ConvertValue(value bigquery.Value) driver.Value {
 	}
 
 	return value
-}
-
-func (column *bigQueryColumn) GetSchemaAdaptor() adaptor.SchemaAdaptor {
-	if columnAdaptor := column.Adaptor; columnAdaptor != nil {
-		return columnAdaptor.GetSchemaAdaptor()
-	}
-	return nil
 }
 
 func createBigQuerySchema(schema bigquery.Schema, schemaAdaptor adaptor.SchemaAdaptor) bigQuerySchema {

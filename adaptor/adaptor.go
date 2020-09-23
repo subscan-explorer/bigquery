@@ -26,9 +26,6 @@ type SchemaColumnAdaptor interface {
 
 	// AdaptValue gets a specific column value that fit the "demand"
 	AdaptValue(value driver.Value) driver.Value
-
-	// GetSchemaAdaptor handles a nested schema that needs to be also adapted to the "demand"
-	GetSchemaAdaptor() SchemaAdaptor
 }
 
 func SetSchemaAdaptor(ctx context.Context, adaptorSchema SchemaAdaptor) context.Context {

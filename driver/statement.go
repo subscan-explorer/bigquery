@@ -59,16 +59,21 @@ func (statement *bigQueryStatement) QueryContext(ctx context.Context, args []dri
 	}
 
 	if statement.query == adaptor.RerouteQuery {
+
 		if len(args) < 1 {
 			return nil, errors.New("expected a rerouting argument")
 		}
 
-		rows, ok := args[0].Value.(driver.Rows)
+		column, ok := args[0].Value.(bigQueryReroutedColumn)
 		if !ok {
 			return nil, errors.New("expected a rerouting argument with rows")
 		}
 
-		return rows, nil
+		schema := createBigQuerySchema(column.schema, adaptor.GetSchemaAdaptor(ctx))
+
+		return &bigQueryRows{
+			source: createSourceFromColumn(schema, column.values),
+		}, nil
 	}
 
 	query, err := statement.buildQuery(convertParameters(args))
@@ -81,7 +86,9 @@ func (statement *bigQueryStatement) QueryContext(ctx context.Context, args []dri
 		return nil, err
 	}
 
-	return &bigQueryRows{source: createSourceFromRowIterator(rowIterator, adaptor.GetSchemaAdaptor(ctx))}, nil
+	return &bigQueryRows{
+		source: createSourceFromRowIterator(rowIterator, adaptor.GetSchemaAdaptor(ctx)),
+	}, nil
 
 }
 

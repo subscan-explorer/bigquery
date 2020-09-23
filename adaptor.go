@@ -37,13 +37,13 @@ type bigQueryColumnAdaptor struct {
 	db    *gorm.DB
 }
 
-func (columnAdaptor bigQueryColumnAdaptor) AdaptValue(value driver.Value) driver.Value {
+func (columnAdaptor *bigQueryColumnAdaptor) AdaptValue(value driver.Value) driver.Value {
 	instance := reflect.New(columnAdaptor.field.IndirectFieldType).Interface()
 	columnAdaptor.db.Raw(adaptor.RerouteQuery, value).Scan(instance)
 	return instance
 }
 
-func (columnAdaptor bigQueryColumnAdaptor) GetSchemaAdaptor() adaptor.SchemaAdaptor {
+func (columnAdaptor *bigQueryColumnAdaptor) GetSchemaAdaptor() adaptor.SchemaAdaptor {
 	schema := columnAdaptor.field.Schema
 
 	if schema == nil {

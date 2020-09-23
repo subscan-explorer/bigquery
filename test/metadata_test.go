@@ -75,7 +75,7 @@ func (suite *MetadataTestSuit) Test_CRUDTableWithMultipleNesting() {
 			Name: "rec1",
 			Record: ComplexSubRecord{
 				Name: "name1",
-				Age:  444,
+				Age:  441,
 			},
 		},
 		SuperRecords: []SuperComplexSubRecord{
@@ -83,19 +83,20 @@ func (suite *MetadataTestSuit) Test_CRUDTableWithMultipleNesting() {
 				Name: "dep1",
 				Age:  444,
 			}},
-			{Name: "sub2", Record: ComplexSubRecord{Name: "dep2"}}}})
+			{Name: "sub2", Record: ComplexSubRecord{Name: "dep2", Age: 442}}}})
 	suite.db.Create(&SuperComplexRecord{Name: "test2",
 		SuperRecord: SuperComplexSubRecord{
 			Name: "rec2",
 			Record: ComplexSubRecord{
 				Name: "dep3",
+				Age:  443,
 			},
 		},
 		SuperRecords: []SuperComplexSubRecord{
 			{Name: "sub3", Record: ComplexSubRecord{
 				Name: "dep3",
-				Age:  0,
-			}}, {Name: "sub4", Record: ComplexSubRecord{Name: "dep4"}}}})
+				Age:  445,
+			}}, {Name: "sub4", Record: ComplexSubRecord{Name: "dep4", Age: 446}}}})
 	suite.db.Order("Name").Find(&records)
 	assert.Equal(suite.T(), 2, len(records), "we should have two records")
 	if len(records) == 2 {
