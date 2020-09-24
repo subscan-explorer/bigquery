@@ -1,9 +1,9 @@
 package test
 
 import (
-	"github.com/go-gorm/bigquery"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/bigquery"
 	"gorm.io/gorm"
 	"log"
 )

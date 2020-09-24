@@ -3,7 +3,7 @@ package driver
 import (
 	"cloud.google.com/go/bigquery"
 	"errors"
-	"github.com/go-gorm/bigquery/adaptor"
+	"gorm.io/driver/bigquery/adaptor"
 	"io"
 )
 

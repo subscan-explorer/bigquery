@@ -3,8 +3,8 @@ package bigquery
 import (
 	"database/sql"
 	"fmt"
-	"github.com/go-gorm/bigquery/adaptor"
-	_ "github.com/go-gorm/bigquery/driver"
+	"gorm.io/driver/bigquery/adaptor"
+	_ "gorm.io/driver/bigquery/driver"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
