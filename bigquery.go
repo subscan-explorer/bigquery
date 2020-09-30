@@ -65,9 +65,14 @@ func (Dialector) BindVarTo(writer clause.Writer, stmt *gorm.Statement, v interfa
 }
 
 func (Dialector) QuoteTo(writer clause.Writer, str string) {
-	writer.WriteByte('`')
-	writer.WriteString(str)
-	writer.WriteByte('`')
+	const prefix = "$$unquoted$$"
+	if strings.HasPrefix(str, prefix) {
+		writer.WriteString(strings.TrimPrefix(str, prefix))
+	} else {
+		writer.WriteByte('`')
+		writer.WriteString(str)
+		writer.WriteByte('`')
+	}
 }
 
 var numericPlaceholder = regexp.MustCompile("\\$(\\d+)")
