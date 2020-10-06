@@ -62,6 +62,10 @@ func (suite *MetadataTestSuit) Test_CRUDTableWithArray() {
 	if len(records) == 2 {
 		assert.Equal(suite.T(), 444, records[1].Records[0].Age)
 	}
+
+	var subRecords []ComplexSubRecord
+	suite.db.Table("array_records, UNNEST(Records) AS x").Select("x.*").Scan(&subRecords)
+	assert.Equal(suite.T(), 4, len(subRecords))
 }
 
 func (suite *MetadataTestSuit) Test_CRUDTableWithMultipleNesting() {
@@ -84,7 +88,9 @@ func (suite *MetadataTestSuit) Test_CRUDTableWithMultipleNesting() {
 	})
 	suite.db.Order("Name").Find(&records)
 	assert.Equal(suite.T(), 2, len(records), "we should have two records")
-	if len(records) == 2 {
+	if len(records) == 2 && len(records[0].SuperRecords) > 0 {
 		assert.Equal(suite.T(), 444, records[0].SuperRecords[0].Record.Age)
+	} else {
+		suite.T().Errorf("failed to get nested results as expected")
 	}
 }

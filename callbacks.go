@@ -25,12 +25,15 @@ type bigQueryCallbacks struct {
 
 func (c *bigQueryCallbacks) queryCallback(db *gorm.DB) {
 	if !db.DryRun {
-
-		db.Statement.Context = adaptor.SetSchemaAdaptor(db.Statement.Context, &bigQuerySchemaAdaptor{
-			db.Statement.Schema,
-			c.root,
-		})
+		applyStatementSchemaContext(db, c.root)
 	}
 
 	callbacks.Query(db)
+}
+
+func applyStatementSchemaContext(db *gorm.DB, rootDB *gorm.DB) {
+	db.Statement.Context = adaptor.SetSchemaAdaptor(db.Statement.Context, &bigQuerySchemaAdaptor{
+		db.Statement.Schema,
+		rootDB,
+	})
 }

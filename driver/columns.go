@@ -8,7 +8,7 @@ import (
 
 type bigQuerySchema interface {
 	ColumnNames() []string
-	ConvertColumnValue(index int, value bigquery.Value) driver.Value
+	ConvertColumnValue(index int, value bigquery.Value) (driver.Value, error)
 }
 
 type bigQueryColumns struct {
@@ -16,13 +16,13 @@ type bigQueryColumns struct {
 	columns []bigQueryColumn
 }
 
-func (columns bigQueryColumns) ConvertColumnValue(index int, value bigquery.Value) driver.Value {
+func (columns bigQueryColumns) ConvertColumnValue(index int, value bigquery.Value) (driver.Value, error) {
 	if index > -1 && len(columns.columns) > index {
 		column := columns.columns[index]
 		return column.ConvertValue(value)
 	}
 
-	return value
+	return value, nil
 }
 
 func (columns bigQueryColumns) ColumnNames() []string {
@@ -40,10 +40,10 @@ type bigQueryColumn struct {
 	Adaptor adaptor.SchemaColumnAdaptor
 }
 
-func (column bigQueryColumn) ConvertValue(value bigquery.Value) driver.Value {
+func (column bigQueryColumn) ConvertValue(value bigquery.Value) (driver.Value, error) {
 
 	if len(column.Schema) == 0 {
-		return value
+		return value, nil
 	}
 
 	values, ok := value.([]bigquery.Value)
@@ -62,7 +62,7 @@ func (column bigQueryColumn) ConvertValue(value bigquery.Value) driver.Value {
 		return columnAdaptor.AdaptValue(value)
 	}
 
-	return value
+	return value, nil
 }
 
 func createBigQuerySchema(schema bigquery.Schema, schemaAdaptor adaptor.SchemaAdaptor) bigQuerySchema {

@@ -40,7 +40,7 @@ func (statement *bigQueryStatement) ExecContext(ctx context.Context, args []driv
 		return nil, err
 	}
 
-	rowIterator, err := query.Read(context.Background())
+	rowIterator, err := query.Read(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,12 @@ func (statement *bigQueryStatement) QueryContext(ctx context.Context, args []dri
 			return nil, errors.New("expected a rerouting argument with rows")
 		}
 
-		schema := createBigQuerySchema(column.schema, adaptor.GetSchemaAdaptor(ctx))
+		schemaAdaptor := adaptor.GetSchemaAdaptor(ctx)
+		if schemaAdaptor == nil {
+			return nil, errors.New("expected a rerouting schema adaptor")
+		}
+
+		schema := createBigQuerySchema(column.schema, schemaAdaptor)
 
 		return &bigQueryRows{
 			source: createSourceFromColumn(schema, column.values),

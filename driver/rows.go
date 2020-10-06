@@ -44,7 +44,10 @@ func (rows *bigQueryRows) Next(dest []driver.Value) error {
 	var length = len(values)
 	for i := range dest {
 		if i < length {
-			dest[i] = rows.schema.ConvertColumnValue(i, values[i])
+			dest[i], err = rows.schema.ConvertColumnValue(i, values[i])
+			if err != nil {
+				return err
+			}
 		}
 	}
 

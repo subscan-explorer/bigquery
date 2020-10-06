@@ -25,7 +25,7 @@ func (schemaAdaptor *bigQuerySchemaAdaptor) GetColumnAdaptor(name string) adapto
 
 		switch field.DataType {
 		case adaptor.RecordType, adaptor.ArrayType:
-			return &bigQueryColumnAdaptor{field: field, db: schemaAdaptor.db}
+			return &bigQueryColumnAdaptor{field: field, rootDB: schemaAdaptor.db}
 		}
 	}
 
@@ -33,14 +33,28 @@ func (schemaAdaptor *bigQuerySchemaAdaptor) GetColumnAdaptor(name string) adapto
 }
 
 type bigQueryColumnAdaptor struct {
-	field *schema.Field
-	db    *gorm.DB
+	field  *schema.Field
+	rootDB *gorm.DB
 }
 
-func (columnAdaptor *bigQueryColumnAdaptor) AdaptValue(value driver.Value) driver.Value {
+func (columnAdaptor *bigQueryColumnAdaptor) AdaptValue(value driver.Value) (driver.Value, error) {
 	instance := reflect.New(columnAdaptor.field.IndirectFieldType).Interface()
-	columnAdaptor.db.Raw(adaptor.RerouteQuery, value).Scan(instance)
-	return instance
+
+	db := columnAdaptor.rootDB.Raw(adaptor.RerouteQuery, value)
+
+	err := db.Statement.Parse(instance)
+	if err != nil {
+		return nil, err
+	}
+
+	applyStatementSchemaContext(db, columnAdaptor.rootDB)
+
+	err = db.Scan(instance).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return instance, err
 }
 
 func (columnAdaptor *bigQueryColumnAdaptor) GetSchemaAdaptor() adaptor.SchemaAdaptor {
@@ -51,6 +65,6 @@ func (columnAdaptor *bigQueryColumnAdaptor) GetSchemaAdaptor() adaptor.SchemaAda
 	}
 	return &bigQuerySchemaAdaptor{
 		schema: schema,
-		db:     columnAdaptor.db,
+		db:     columnAdaptor.rootDB,
 	}
 }

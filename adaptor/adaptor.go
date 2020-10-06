@@ -25,7 +25,7 @@ type SchemaAdaptor interface {
 type SchemaColumnAdaptor interface {
 
 	// AdaptValue gets a specific column value that fit the "demand"
-	AdaptValue(value driver.Value) driver.Value
+	AdaptValue(value driver.Value) (driver.Value, error)
 }
 
 func SetSchemaAdaptor(ctx context.Context, adaptorSchema SchemaAdaptor) context.Context {
