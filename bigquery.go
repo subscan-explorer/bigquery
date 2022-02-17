@@ -3,6 +3,10 @@ package bigquery
 import (
 	"database/sql"
 	"fmt"
+	"reflect"
+	"regexp"
+	"strings"
+
 	"gorm.io/driver/bigquery/adaptor"
 	_ "gorm.io/driver/bigquery/driver"
 	"gorm.io/gorm"
@@ -10,9 +14,6 @@ import (
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/migrator"
 	"gorm.io/gorm/schema"
-	"reflect"
-	"regexp"
-	"strings"
 )
 
 type Dialector struct {
@@ -84,21 +85,26 @@ func (dialector Dialector) DataTypeOf(field *schema.Field) string {
 		return "INT64"
 	case schema.Float:
 		return "FLOAT64"
-	case schema.String:
+	case schema.String, "MEDIUMTEXT", "TEXT":
 		return "STRING"
 	case schema.Time:
 		return "TIMESTAMP"
 	case schema.Bytes:
 		return "BYTES"
+	case "json": // TODO https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types?hl=zh_CN#json_type
+		return "STRING"
 	}
-
+	switch field.FieldType.String() {
+	case "decimal.Decimal":
+		return strings.Replace(string(field.DataType), "decimal", "BIGNUMERIC", 1)
+	}
 	switch field.DataType {
 	case adaptor.RecordType:
 		return dialector.dataTypeOfNested("STRUCT<%s>", field)
 	case adaptor.ArrayType:
 		return dialector.dataTypeOfNested("ARRAY<STRUCT<%s>>", field)
 	}
-	return string(field.DataType)
+	return strings.Replace(string(field.DataType), "decimal", "BIGNUMERIC", 1)
 }
 
 func (dialector Dialector) dataTypeOfNested(format string, field *schema.Field) string {
