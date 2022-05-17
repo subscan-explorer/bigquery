@@ -15,6 +15,8 @@ type bigQuerySource interface {
 type bigQueryRowIteratorSource struct {
 	iterator      *bigquery.RowIterator
 	schemaAdaptor adaptor.SchemaAdaptor
+	prevValues []bigquery.Value
+	prevError error
 }
 
 func (source *bigQueryRowIteratorSource) GetSchema() bigQuerySchema {
@@ -23,15 +25,28 @@ func (source *bigQueryRowIteratorSource) GetSchema() bigQuerySchema {
 
 func (source *bigQueryRowIteratorSource) Next() ([]bigquery.Value, error) {
 	var values []bigquery.Value
-	err := source.iterator.Next(&values)
+	var err error
+	if source.prevValues != nil || source.prevError != nil {
+		values = source.prevValues
+		err = source.prevError
+		source.prevValues = nil
+		source.prevError = nil
+	} else {
+		err = source.iterator.Next(&values)
+	}
 	return values, err
 }
 
 func createSourceFromRowIterator(rowIterator *bigquery.RowIterator, schemaAdaptor adaptor.SchemaAdaptor) bigQuerySource {
-	return &bigQueryRowIteratorSource{
+	source := &bigQueryRowIteratorSource{
 		iterator:      rowIterator,
 		schemaAdaptor: schemaAdaptor,
 	}
+	// Call RowIterator.Next once so that calls to source.iterator.Schema will return values
+	if source.iterator != nil {
+		source.prevError = source.iterator.Next(&source.prevValues)
+	}
+	return source
 }
 
 type bigQueryColumnSource struct {
