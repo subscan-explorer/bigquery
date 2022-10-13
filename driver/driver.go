@@ -1,12 +1,14 @@
 package driver
 
 import (
-	"cloud.google.com/go/bigquery"
 	"context"
 	"database/sql/driver"
 	"fmt"
 	"net/url"
 	"strings"
+
+	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/option"
 )
 
 type bigQueryDriver struct {
@@ -16,6 +18,7 @@ type bigQueryConfig struct {
 	projectID string
 	location  string
 	dataSet   string
+	scopes    []string
 }
 
 func (b bigQueryDriver) Open(uri string) (driver.Conn, error) {
@@ -31,7 +34,7 @@ func (b bigQueryDriver) Open(uri string) (driver.Conn, error) {
 
 	ctx := context.Background()
 
-	client, err := bigquery.NewClient(ctx, config.projectID)
+	client, err := bigquery.NewClient(ctx, config.projectID, option.WithScopes(config.scopes...))
 	if err != nil {
 		return nil, err
 	}
@@ -65,6 +68,7 @@ func configFromUri(uri string) (*bigQueryConfig, error) {
 	config := &bigQueryConfig{
 		projectID: u.Hostname(),
 		dataSet:   fields[len(fields)-1],
+		scopes:    getScopes(u.Query()),
 	}
 
 	if len(fields) == 2 {
@@ -74,7 +78,13 @@ func configFromUri(uri string) (*bigQueryConfig, error) {
 	return config, nil
 }
 
-	return nil, fmt.Errorf("invalid connection string : %s", uri)
+func getScopes(query url.Values) []string {
+	q := strings.Trim(query.Get("scopes"), ",")
+	if q == "" {
+		return []string{}
+	}
+	return strings.Split(q, ",")
+}
 
 func invalidConnectionStringError(uri string) error {
 	return fmt.Errorf("invalid connection string: %s", uri)
