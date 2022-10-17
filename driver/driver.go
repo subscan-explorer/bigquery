@@ -1,11 +1,14 @@
 package driver
 
 import (
-	"cloud.google.com/go/bigquery"
 	"context"
 	"database/sql/driver"
 	"fmt"
+	"net/url"
 	"strings"
+
+	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/option"
 )
 
 type bigQueryDriver struct {
@@ -15,6 +18,7 @@ type bigQueryConfig struct {
 	projectID string
 	location  string
 	dataSet   string
+	scopes    []string
 }
 
 func (b bigQueryDriver) Open(uri string) (driver.Conn, error) {
@@ -30,7 +34,7 @@ func (b bigQueryDriver) Open(uri string) (driver.Conn, error) {
 
 	ctx := context.Background()
 
-	client, err := bigquery.NewClient(ctx, config.projectID)
+	client, err := bigquery.NewClient(ctx, config.projectID, option.WithScopes(config.scopes...))
 	if err != nil {
 		return nil, err
 	}
@@ -43,31 +47,45 @@ func (b bigQueryDriver) Open(uri string) (driver.Conn, error) {
 }
 
 func configFromUri(uri string) (*bigQueryConfig, error) {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return nil, invalidConnectionStringError(uri)
+	}
 
-	if !strings.HasPrefix(uri, "bigquery://") {
+	if u.Scheme != "bigquery" {
 		return nil, fmt.Errorf("invalid prefix, expected bigquery:// got: %s", uri)
 	}
 
-	uri = strings.ToLower(uri)
-	path := strings.TrimPrefix(uri, "bigquery://")
-	fields := strings.Split(path, "/")
+	if u.Path == "" {
+		return nil, invalidConnectionStringError(uri)
+	}
 
-	if len(fields) == 3 {
-		return &bigQueryConfig{
-			projectID: fields[0],
-			location:  fields[1],
-			dataSet:   fields[2],
-		}, nil
+	fields := strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
+	if len(fields) > 2 {
+		return nil, invalidConnectionStringError(uri)
+	}
+
+	config := &bigQueryConfig{
+		projectID: u.Hostname(),
+		dataSet:   fields[len(fields)-1],
+		scopes:    getScopes(u.Query()),
 	}
 
 	if len(fields) == 2 {
-		return &bigQueryConfig{
-			projectID: fields[0],
-			location:  "",
-			dataSet:   fields[1],
-		}, nil
+		config.location = fields[0]
 	}
 
-	return nil, fmt.Errorf("invalid connection string : %s", uri)
+	return config, nil
+}
 
+func getScopes(query url.Values) []string {
+	q := strings.Trim(query.Get("scopes"), ",")
+	if q == "" {
+		return []string{}
+	}
+	return strings.Split(q, ",")
+}
+
+func invalidConnectionStringError(uri string) error {
+	return fmt.Errorf("invalid connection string: %s", uri)
 }
