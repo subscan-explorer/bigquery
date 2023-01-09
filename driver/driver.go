@@ -15,10 +15,12 @@ type bigQueryDriver struct {
 }
 
 type bigQueryConfig struct {
-	projectID string
-	location  string
-	dataSet   string
-	scopes    []string
+	projectID   string
+	location    string
+	dataSet     string
+	scopes      []string
+	endpoint    string
+	disableAuth bool
 }
 
 func (b bigQueryDriver) Open(uri string) (driver.Conn, error) {
@@ -34,7 +36,15 @@ func (b bigQueryDriver) Open(uri string) (driver.Conn, error) {
 
 	ctx := context.Background()
 
-	client, err := bigquery.NewClient(ctx, config.projectID, option.WithScopes(config.scopes...))
+	opts := []option.ClientOption{option.WithScopes(config.scopes...)}
+	if config.endpoint != "" {
+		opts = append(opts, option.WithEndpoint(config.endpoint))
+	}
+	if config.disableAuth {
+		opts = append(opts, option.WithoutAuthentication())
+	}
+
+	client, err := bigquery.NewClient(ctx, config.projectID, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -66,9 +76,11 @@ func configFromUri(uri string) (*bigQueryConfig, error) {
 	}
 
 	config := &bigQueryConfig{
-		projectID: u.Hostname(),
-		dataSet:   fields[len(fields)-1],
-		scopes:    getScopes(u.Query()),
+		projectID:   u.Hostname(),
+		dataSet:     fields[len(fields)-1],
+		scopes:      getScopes(u.Query()),
+		endpoint:    u.Query().Get("endpoint"),
+		disableAuth: u.Query().Get("disable_auth") == "true",
 	}
 
 	if len(fields) == 2 {
