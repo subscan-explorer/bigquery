@@ -1,8 +1,10 @@
 package driver
 
 import (
-	"cloud.google.com/go/bigquery"
 	"database/sql/driver"
+	"encoding/json"
+
+	"cloud.google.com/go/bigquery"
 	"gorm.io/driver/bigquery/adaptor"
 )
 
@@ -32,6 +34,10 @@ func (columns bigQueryColumns) ColumnNames() []string {
 type bigQueryReroutedColumn struct {
 	values []bigquery.Value
 	schema bigquery.Schema
+}
+
+func (c bigQueryReroutedColumn) MarshalJSON() ([]byte, error) {
+	return json.Marshal(c.values)
 }
 
 type bigQueryColumn struct {
